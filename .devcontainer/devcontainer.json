@@ -1,0 +1,94 @@
+// {
+//     "name": "ws_ros2jazzy",
+//     "privileged": true,
+//     "remoteUser": "root",
+//     "build": {
+//       "dockerfile": "Dockerfile",
+//       "imageName": "ros2jazzy",
+//       "context": "."},
+//     "runArgs": [
+//       "--net=host",
+//       "--pid=host",
+//       "--ipc=host",
+//       "-e", "DISPLAY=${env:DISPLAY}",
+//       "--name=ws_ros2jazzy"
+//     ],
+//     "workspaceFolder": "${localWorkspaceFolder}",
+//     "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind",
+//     "customizations": {
+//       "vscode": {
+//         "extensions": [
+//           "ms-vscode.cpptools",
+//           "ms-vscode.cpptools-themes",
+//           "twxs.cmake",
+//           "donjayamanne.python-extension-pack",
+//           "eamodio.gitlens",
+//           "ms-iot.vscode-ros"
+//         ]
+//       }
+//     },
+//     "containerEnv": {
+//       "DISPLAY": "unix:0",
+//       "ROS_DOMAIN_ID": "42",
+//       "SSH_AUTH_SOCK": "/ssh-agent"
+//     },
+//     "mounts": [
+//       "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
+//       "source=/dev/dri,target=/dev/dri,type=bind,consistency=cached",
+//       "source=${env:SSH_AUTH_SOCK},target=/ssh-agent,type=bind",
+//       "source=/etc/udev,target=/etc/udev,type=bind,consistency=cached",
+//       "source=/etc/NetworkManager,target=/etc/NetworkManager,type=bind,consistency=cached",
+//       "source=/dev/bus/usb,target=/dev/bus/usb,type=bind"
+//     ],
+//     "postCreateCommand": "sudo rosdep update && sudo apt update"
+// }
+
+
+{
+  "name": "ws_ros2jazzy",
+  "privileged": true,
+  "remoteUser": "root",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "imageName": "ros2jazzy",
+    "context": "."
+  },
+  "runArgs": [
+    "--gpus=all",
+    "--net=host",
+    "--pid=host",
+    "--ipc=host",
+    "-e", "DISPLAY=${env:DISPLAY}",
+    "-e", "NVIDIA_VISIBLE_DEVICES=all",
+    "-e", "NVIDIA_DRIVER_CAPABILITIES=all",
+    "--name=ws_ros2jazzy"
+  ],
+  "workspaceFolder": "${localWorkspaceFolder}",
+  "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-themes",
+        "twxs.cmake",
+        "donjayamanne.python-extension-pack",
+        "eamodio.gitlens",
+        "ms-iot.vscode-ros"
+      ]
+    }
+  },
+  "containerEnv": {
+    "DISPLAY": "unix:0",
+    "ROS_DOMAIN_ID": "42",
+    "SSH_AUTH_SOCK": "/ssh-agent"
+  },
+  "mounts": [
+    "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached",
+    "source=/dev/dri,target=/dev/dri,type=bind,consistency=cached",
+    "source=${env:SSH_AUTH_SOCK},target=/ssh-agent,type=bind",
+    "source=/etc/udev,target=/etc/udev,type=bind,consistency=cached",
+    "source=/etc/NetworkManager,target=/etc/NetworkManager,type=bind,consistency=cached",
+    "source=/dev/bus/usb,target=/dev/bus/usb,type=bind"
+  ],
+  "postCreateCommand": "sudo rosdep update && sudo apt update"
+}
