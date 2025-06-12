@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>pi0_ur5_grasp</name>
+  <version>0.0.1</version>
+  <description>Grasping with UR5 using π0 (Pi-Zero) vision-language model via LeRobot</description>
+
+  <maintainer email="your_email@example.com">Your Name</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>trajectory_msgs</exec_depend>
+  <exec_depend>builtin_interfaces</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  
+  <exec_depend>openpi</exec_depend> 
+  <exec_depend>numpy</exec_depend>
+
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>opencv-python</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
