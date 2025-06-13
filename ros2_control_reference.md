@@ -11,6 +11,7 @@ System: ROS 2 Jazzy (or Humble), Python 3.12, UR5 + Orbbec Femto Bolt
 ```bash
 cd /mnt/HDD/shuo/VLA/ros2_ws
 colcon build --symlink-install
+colcon build --packages-select pi0_ur5_grasp --symlink-install
 source install/setup.bash
 ```
 
@@ -25,6 +26,10 @@ ros2 launch orbbec_camera femto_bolt.launch.py
 ```
 
 ---
+
+xhost +local:docker
+xhost +local:
+
 
 ## 🤖 Launch the UR5 Robot Driver
 
