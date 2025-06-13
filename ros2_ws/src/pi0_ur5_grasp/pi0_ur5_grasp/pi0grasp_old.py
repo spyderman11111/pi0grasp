@@ -49,29 +49,11 @@ class UR5Inputs(transforms.DataTransformFn):
 
         return inputs
 
-
 @dataclasses.dataclass(frozen=True)
 class UR5Outputs(transforms.DataTransformFn):
     def __call__(self, data: dict) -> dict:
         actions = np.asarray(data["actions"], dtype=np.float32)
-        if actions.ndim == 3:
-            actions = actions[0, 0]
-        elif actions.ndim == 2:
-            actions = actions[0]
-        return {"actions": actions[:6]}  
-
-
-@dataclasses.dataclass(frozen=True)
-class UR5Outputs(transforms.DataTransformFn):
-    def __call__(self, data: dict) -> dict:
-        actions = np.asarray(data["actions"])
-        # Safe slicing: support (1, H, D) and (1, D)
-        if actions.ndim == 3:
-            actions = actions[0, 0]  # (1, 50, 32) → (32,)
-        elif actions.ndim == 2:
-            actions = actions[0]     # (1, 32) → (32,)
-        return {"actions": actions[:6]}  # only take first 6 for UR5
-
+        return {"actions": actions[:, :6]}  
 
 class Pi0GraspNode(Node):
     def __init__(self):
@@ -93,19 +75,16 @@ class Pi0GraspNode(Node):
 
         self.get_logger().info("Loading π0-base model (this may take a few seconds)...")
         cfg = pi0_config.get_config("pi0_libero")
+        print(cfg)
         ckpt = download.maybe_download("s3://openpi-assets/checkpoints/pi0_libero")
         self.policy = policy_config.create_trained_policy(cfg, ckpt)
 
         self.trajectory_pub = self.create_publisher(JointTrajectory, '/scaled_joint_trajectory_controller/joint_trajectory', 10)
         self.home_joint_names = [
-            'elbow_joint',
-            'shoulder_lift_joint',
-            'shoulder_pan_joint',
-            'wrist_1_joint',
-            'wrist_2_joint',
-            'wrist_3_joint'
+            'elbow_joint', 'shoulder_lift_joint', 'shoulder_pan_joint',
+            'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint'
         ]
-        self.home_positions = [ 0.07505, -1.53058, 1.48675, -0.08071, -1.57239, -0.07874 ]
+        self.home_positions = [0.07505, -1.53058, 1.48675, -0.08071, -1.57239, -0.07874]
         self.init_timer = self.create_timer(1.0, self.send_initial_pose)
 
         self.image_sub = self.create_subscription(Image, '/camera/color/image_raw', self.image_callback, 10)
@@ -120,7 +99,7 @@ class Pi0GraspNode(Node):
         point = JointTrajectoryPoint()
         point.positions = self.home_positions
         point.velocities = [0.2] * len(self.home_positions)
-        point.time_from_start = Duration(sec=10)
+        point.time_from_start = Duration(sec=5)
         traj.points = [point]
         self.trajectory_pub.publish(traj)
         self.get_logger().info("Initial home position trajectory published.")
@@ -151,64 +130,50 @@ class Pi0GraspNode(Node):
 
     def process_data(self):
         self.processed = True
-
-        # 图像和关节数据处理
-        base_img = np.transpose(self.latest_image, (1, 2, 0))  # (H, W, C)
+        base_img = np.transpose(self.latest_image, (1, 2, 0))
         joints = self.latest_joints["positions"][:6]
         joint_names = self.latest_joints["names"][:6]
 
-        # 构造输入字典
         data = {
             "joints": joints,
-            "gripper": np.array([], dtype=np.float32),  # 你没用 gripper 所以设为空
+            "gripper": np.array([], dtype=np.float32),
             "base_rgb": base_img,
             "wrist_rgb": np.zeros_like(base_img, dtype=np.uint8),
             "prompt": self.prompt
         }
 
-        self.get_logger().info(f"[Input] Joints: {joints.tolist()}")
-        self.get_logger().info(f"[Input] Base image shape: {base_img.shape}")
-        self.get_logger().info(f"[Input] Prompt: \"{self.prompt}\"")
-
         try:
             model_input = self.input_transform(data)
-
-            self.get_logger().info("[Transform] Model input keys and shapes:")
-            for k, v in model_input.items():
-                if isinstance(v, np.ndarray):
-                    self.get_logger().info(f"  {k}: {v.shape}")
-                else:
-                    self.get_logger().info(f"  {k}: {type(v)}")
-
             result = self.policy.infer(model_input)
-
-            self.get_logger().info(f"[Output] Model raw output keys: {result.keys()}")
-            self.get_logger().info(f"[Output] Model raw actions shape: {np.shape(result.get('actions', None))}")
-
+            self.get_logger().info(f"Model input keys: {list(model_input.keys())}")
+            
             output = self.output_transform(result)
-            target_joints = output["actions"].reshape(-1)
-
+            self.action_sequence = output["actions"]  # shape (50, 6)
+            self.joint_names = joint_names
+            self.current_step = 0
+            self.action_timer = self.create_timer(2.0, self.execute_next_step)  #change speed
         except Exception as e:
             self.get_logger().error(f"Inference failed: {e}")
             rclpy.shutdown()
+
+    def execute_next_step(self):
+        if self.current_step >= len(self.action_sequence):
+            self.action_timer.cancel()
+            self.get_logger().info("Finished executing all 50 steps.")
+            self.return_timer = self.create_timer(2.0, self.return_home)
             return
 
-        self.get_logger().info(f"[Action] Predicted joint targets: {target_joints.tolist()}")
-
-        # 发布动作到 controller
+        joint_targets = self.action_sequence[self.current_step]
         traj_msg = JointTrajectory()
         traj_msg.header.stamp = self.get_clock().now().to_msg()
-        traj_msg.joint_names = joint_names
+        traj_msg.joint_names = self.joint_names
         point = JointTrajectoryPoint()
-        point.positions = target_joints.tolist()
-        point.time_from_start = Duration(sec=2)
+        point.positions = joint_targets.tolist()
+        point.time_from_start = Duration(sec=2)  #set the speed
         traj_msg.points.append(point)
         self.trajectory_pub.publish(traj_msg)
-        self.get_logger().info("[Action] Published JointTrajectory to controller.")
-
-        # 定时返回 home
-        self.return_timer = self.create_timer(3.0, self.return_home)
-
+        self.get_logger().info(f"[Action] Step {self.current_step+1}/50, joints: {joint_targets.tolist()}")
+        self.current_step += 1
 
     def return_home(self):
         self.return_timer.cancel()
@@ -230,7 +195,6 @@ class Pi0GraspNode(Node):
             self.get_logger().info(f"Using prompt: \"{self.prompt}\"")
             self.processed = False
 
-
 def main(args=None):
     rclpy.init(args=args)
     node = Pi0GraspNode()
@@ -242,7 +206,6 @@ def main(args=None):
         if rclpy.ok():
             node.destroy_node()
             rclpy.shutdown()
-
 
 if __name__ == "__main__":
     main()
