@@ -12,13 +12,22 @@ This project integrates a UR5 robotic arm with a vision-language-action (VLA) po
 ```
 ros2_ws/
 ├── src/
-│   ├── pi0_ur5_grasp/          # Main ROS2 package for grasping
-│   ├── openpi/                 # Git submodule: OpenPI source
-│   └── ur5_transforms.py       # Input/output transform logic
-├── scripts/
-│   └── run_pi0grasp.sh         # Script to launch grasp node
-├── install/
-└── build/
+│   ├── pi0_ur5_grasp/          # Main ROS 2 package for grasping
+│   │   ├── launch/             # ROS 2 launch files
+│   │   ├── pi0_ur5_grasp/      # Python module with grasp scripts
+│   │   │   ├── pi0grasp.py     # Main node
+│   │   │   ├── finalgrasp.py   # Final version node
+│   │   │   ├── home_pose.py    # Home pose manager
+│   │   │   ├── simplegrasp.py  # Simpler policy variant
+│   │   │   └── smolvlagrasp.py # SmolVLA baseline (optional)
+│   │   ├── resource/           # Package resource marker
+│   │   ├── setup.py/setup.cfg/package.xml  # ROS 2 Python packaging
+│   └── openpi/                 # Git submodule: OpenPI source code
+├── run_pi0grasp.sh             # Shell script to launch the grasp node
+├── .env                        # Environment variables (if any)
+├── README.md                   # Project documentation
+├── ros2_control_reference.md   # ROS 2 usage command reference
+└── worklog.md                  # Notes or logs
 ```
 
 ---
@@ -78,68 +87,6 @@ ros2 control set_controller_state scaled_joint_trajectory_controller activate
 bash run_pi0grasp.sh
 # Enter prompt such as: pick the red cube
 ```
-
----
-
-## Input Format (UR5Inputs)
-
-```python
-{
-  "joints": np.array([...]),
-  "base_rgb": np.ndarray [H, W, C],
-  "wrist_rgb": np.ndarray [H, W, C] or zeros,
-  "prompt": "pick a red cube"
-}
-```
-
----
-
-## Output Format (UR5Outputs)
-
-```python
-{
-  "actions": np.array([...])   # 6-DOF joint positions for UR5
-}
-```
-
----
-
-## Example Trajectory Command
-
-```bash
-ros2 topic pub --once /scaled_joint_trajectory_controller/joint_trajectory trajectory_msgs/JointTrajectory "
-joint_names:
-- elbow_joint
-- shoulder_lift_joint
-- shoulder_pan_joint
-- wrist_1_joint
-- wrist_2_joint
-- wrist_3_joint
-points:
-- positions: [0.0, -1.57, 1.57, 0.0, -1.57, 0.0]
-  time_from_start:
-    sec: 5"
-```
-
----
-
-## Topic List Reference
-
-Includes:
-
-* `/camera/color/image_raw`
-* `/joint_states`
-* `/scaled_joint_trajectory_controller/joint_trajectory`
-* `/force_torque_sensor_broadcaster/wrench`
-* `/io_and_status_controller/robot_mode`
-
-For a full list, run:
-
-```bash
-ros2 topic list
-```
-
----
 
 ## Contact
 
