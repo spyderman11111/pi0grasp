@@ -140,15 +140,21 @@ class Pi0GraspNode(Node):
             if np.isnan(actions).any():
                 self.get_logger().warn("[WARNING] NaNs detected in action output.")
 
-            output = self.output_transform({"actions": actions})
-            self.action_sequence = output["actions"]  # shape (50, 6)
+            delta_joints = actions[:, :6]  # shape (50, 6)
+            current_joint = joints  # shape (6,)
+            absolute_joints = delta_joints + current_joint[None, :]  # shape (50, 6)
+
+            self.action_sequence = absolute_joints
             self.joint_names = joint_names
             self.current_step = 0
             self.action_timer = self.create_timer(2.0, self.execute_next_step)
+            delta_stats = delta_joints.std(axis=0)
+            self.get_logger().info(f"[DEBUG] Delta std per joint: {delta_stats}")
 
         except Exception as e:
             self.get_logger().error(f"[ERROR] Inference failed: {e}")
             rclpy.shutdown()
+
 
     def execute_next_step(self):
         if self.current_step >= len(self.action_sequence):
