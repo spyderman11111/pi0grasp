@@ -63,6 +63,13 @@ source install/setup.bash
 # Launch Orbbec camera
 ros2 launch orbbec_camera femto_bolt.launch.py
 
+# activate GUI
+if you are using dovcontainer, you need to use
+```bash
+xhost +
+```
+on an external console to activate the GUI control(rviz)
+
 # Launch UR5 driver with RViz
 ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur5 robot_ip:=172.18.7.1 launch_rviz:=true
 
@@ -80,6 +87,31 @@ ros2 control set_controller_state scaled_joint_trajectory_controller activate
 ```
 
 ---
+## Test Controller Management
+
+```bash
+ros2 topic pub /scaled_joint_trajectory_controller/joint_trajectory trajectory_msgs/JointTrajectory "{
+  header: {
+    stamp: {sec: 0, nanosec: 0},
+    frame_id: ''
+  },
+  joint_names: [
+    'shoulder_lift_joint',
+    'elbow_joint',
+    'wrist_1_joint',
+    'wrist_2_joint',
+    'wrist_3_joint',
+    'shoulder_pan_joint'
+  ],
+  points: [
+    {
+      positions: [-1.4959, 0.1893, -0.2826, -1.5792, 0.0392, 1.5944],
+      time_from_start: {sec: 2, nanosec: 0}
+    }
+  ]
+}"
+
+```
 
 ## Run Grasp Node
 
