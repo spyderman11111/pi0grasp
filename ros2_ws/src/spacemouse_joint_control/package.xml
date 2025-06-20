@@ -1,0 +1,19 @@
+<?xml version="3.0"?>
+<package format="3">
+  <name>spacemouse_joint_control</name>
+  <version>0.0.1</version>
+  <description>Control UR5 joints using SpaceMouse input.</description>
+
+  <maintainer email="you@example.com">Your Name</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>trajectory_msgs</exec_depend>
+  <exec_depend>builtin_interfaces</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
