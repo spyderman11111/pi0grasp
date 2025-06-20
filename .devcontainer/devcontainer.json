@@ -58,11 +58,15 @@
     "--net=host",
     "--pid=host",
     "--ipc=host",
+    "--privileged",
+    "-v", "/dev/input:/dev/input",
+    "-v", "/run/udev:/run/udev:ro",
     "-e", "DISPLAY=${env:DISPLAY}",
     "-e", "NVIDIA_VISIBLE_DEVICES=all",
     "-e", "NVIDIA_DRIVER_CAPABILITIES=all",
     "--name=ws_ros2jazzy"
   ],
+
   "workspaceFolder": "${localWorkspaceFolder}",
   "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind",
   "customizations": {
