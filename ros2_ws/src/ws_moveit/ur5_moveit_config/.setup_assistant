@@ -1,0 +1,25 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: ""
+    relative_path: /tmp/ur5_robot.urdf
+  srdf:
+    relative_path: config/ur5.srdf
+  package_settings:
+    author_name: shuozhang
+    author_email: shuozhang@fraunhofer.ipk.de
+    generated_timestamp: 1750857473
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity
+  modified_urdf:
+    xacros:
+      - control_xacro
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity
